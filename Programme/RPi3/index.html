@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervision Parking IUT</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ecf0f1; color: #2c3e50; margin: 0; padding: 0; }
+        
+        /* NAVBAR BLEU FONCÉ */
+        .navbar { background-color: #1a252f; padding: 15px 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .btn-accueil { background-color: #34495e; color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px;}
+        .btn-accueil:hover { background-color: #2c3e50; }
+        .nav-title { color: white; margin: 0 auto; font-size: 24px; padding-right: 100px; } /* Padding pour centrer visuellement */
+
+        .content { padding: 20px; }
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 30px; }
+        
+        .grid-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .panel { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 350px; }
+        .panel h3 { margin-top: 0; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; color: #2980b9; }
+        
+        /* Places de parking */
+        .place-container { margin-bottom: 15px; border-bottom: 1px solid #ecf0f1; padding-bottom: 10px;}
+        .place-status { font-size: 20px; font-weight: bold; padding: 10px; color: white; border-radius: 5px; text-align: center; margin-bottom: 5px; transition: 0.3s; }
+        .libre { background-color: #27ae60; }
+        .occupe { background-color: #e74c3c; }
+        .inconnu { background-color: #95a5a6; }
+        .chrono { font-size: 13px; color: #7f8c8d; text-align: center; font-weight: bold;}
+        
+        /* Boutons */
+        button { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; color: white; transition: 0.2s; margin-top: 10px; }
+        .btn-danger { background-color: #c0392b; }
+        .btn-danger:hover { background-color: #a5281b; }
+        .btn-success { background-color: #27ae60; }
+        .btn-primary { background-color: #2980b9; }
+        .btn-warning { background-color: #f39c12; }
+
+        /* Stats & Logs */
+        .panel-large { max-width: 720px; }
+        .stats-box { display: flex; justify-content: space-around; text-align: center; margin-top: 15px; }
+        .stat-num { font-size: 32px; font-weight: bold; margin: 0; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px;}
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        .log-auth { color: #27ae60; font-weight: bold; }
+        .log-denied { color: #e74c3c; font-weight: bold; }
+        input { width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #bdc3c7; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="http://192.168.1.138" class="btn-accueil">⬅ Accueil</a>
+        <h2 class="nav-title">🅿️ Centre de Supervision Parking</h2>
+    </nav>
+
+    <div class="content">
+        <p class="subtitle">Dernière comm. LoRa : <b id="last-update">En attente...</b> | Remplissage : <b id="stats-global">Calcul...</b></p>
+
+        <div class="grid-container">
+            
+            <div class="panel">
+                <h3>🚗 Occupation en Temps Réel</h3>
+                
+                <div class="place-container">
+                    <div style="font-weight: bold; margin-bottom: 5px;">Place N°1</div>
+                    <div id="status-1" class="place-status inconnu">INCONNU</div>
+                    <div id="time-1" class="chrono">⏱️ -</div>
+                </div>
+                
+                <div class="place-container">
+                    <div style="font-weight: bold; margin-bottom: 5px;">Place N°2</div>
+                    <div id="status-2" class="place-status inconnu">INCONNU</div>
+                    <div id="time-2" class="chrono">⏱️ -</div>
+                </div>
+                
+                <div class="place-container">
+                    <div style="font-weight: bold; margin-bottom: 5px;">Place N°3</div>
+                    <div id="status-3" class="place-status inconnu">INCONNU</div>
+                    <div id="time-3" class="chrono">⏱️ -</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>⚙️ Contrôle d'Accès & Matériel</h3>
+                <p>Barrière physique : <b id="status-barriere" style="font-size: 18px;">Inconnu</b></p>
+                <p>État du Parking : <b id="status-parking" style="font-size: 18px;">OUVERT</b></p>
+                
+                <button id="btn-toggle" class="btn-danger" onclick="toggleParking()">FORCER FERMETURE</button>
+                <button class="btn-warning" onclick="resetLcd()">🔄 FIX ECRAN LCD</button>
+                
+                <h3 style="margin-top: 30px;">➕ Ajouter Utilisateur RFID</h3>
+                <input type="text" id="new-uid" placeholder="UID Badge (ex: A1 B2 C3 D4)">
+                <input type="text" id="new-nom" placeholder="Nom de l'utilisateur">
+                <button class="btn-primary" onclick="addUser()">Enregistrer le badge</button>
+            </div>
+
+            <div class="panel panel-large">
+                <h3>📊 Statistiques d'Occupation (Aujourd'hui)</h3>
+                <div class="stats-box">
+                    <div>
+                        <p class="stat-num" id="stat-total" style="color: #2980b9;">0</p>
+                        <p style="font-size: 12px; color: #7f8c8d;">Accès Totaux</p>
+                    </div>
+                    <div>
+                        <p class="stat-num" id="stat-auth" style="color: #27ae60;">0</p>
+                        <p style="font-size: 12px; color: #7f8c8d;">Autorisés</p>
+                    </div>
+                    <div>
+                        <p class="stat-num" id="stat-refus" style="color: #e74c3c;">0</p>
+                        <p style="font-size: 12px; color: #7f8c8d;">Refusés</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">📋 Historique des Accès (Logs)</h3>
+                <table>
+                    <thead>
+                        <tr><th>Heure</th><th>UID Badge</th><th>Utilisateur</th><th>Résultat</th></tr>
+                    </thead>
+                    <tbody id="logs-table">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateDashboard() {
+            // 1. Mise à jour des places et du temps
+            fetch('/api/data')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('last-update').innerText = data["last_update"];
+                    document.getElementById('status-barriere').innerText = data["entree"];
+                    document.getElementById('status-parking').innerText = data["statut_global"];
+                    document.getElementById('stats-global').innerText = data["stats"];
+                    
+                    let btn = document.getElementById('btn-toggle');
+                    if(data["statut_global"] === "OUVERT") {
+                        btn.className = "btn-danger"; btn.innerText = "FORCER FERMETURE";
+                    } else {
+                        btn.className = "btn-success"; btn.innerText = "RÉOUVRIR LE PARKING";
+                    }
+
+                    for (let i = 1; i <= 3; i++) {
+                        let div = document.getElementById('status-' + i);
+                        let chrono = document.getElementById('time-' + i);
+                        let etat = data[i.toString()];
+                        
+                        div.innerText = etat;
+                        if (etat === "OCCUPE") {
+                            div.className = "place-status occupe";
+                            chrono.innerText = "⏱️ Occupé depuis " + data["duree_" + i];
+                        } else if (etat === "LIBRE") {
+                            div.className = "place-status libre";
+                            chrono.innerText = "Libre";
+                        } else {
+                            div.className = "place-status inconnu";
+                            chrono.innerText = "En attente du capteur...";
+                        }
+                    }
+                });
+
+            // 2. Mise à jour des Logs
+            fetch('/api/logs')
+                .then(r => r.json())
+                .then(logs => {
+                    let tbody = document.getElementById('logs-table');
+                    tbody.innerHTML = ""; 
+                    logs.forEach(log => {
+                        let tr = document.createElement('tr');
+                        let colorClass = log[3].includes("AUTORISÉ") ? "log-auth" : "log-denied";
+                        tr.innerHTML = `<td>${log[0]}</td><td>${log[1]}</td><td>${log[2]}</td><td class="${colorClass}">${log[3]}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                });
+                
+            // 3. Mise à jour des Statistiques Globales
+            fetch('/api/stats_globales')
+                .then(r => r.json())
+                .then(stats => {
+                    document.getElementById('stat-total').innerText = stats.total;
+                    document.getElementById('stat-auth').innerText = stats.auth;
+                    document.getElementById('stat-refus').innerText = stats.refus;
+                });
+        }
+
+        function toggleParking() { fetch('/api/toggle_status', { method: 'POST' }).then(() => updateDashboard()); }
+        function resetLcd() { fetch('/api/reset_lcd', { method: 'POST' }); }
+        
+        function addUser() {
+            let uid = document.getElementById('new-uid').value;
+            let nom = document.getElementById('new-nom').value;
+            if(!uid || !nom) { alert("Veuillez remplir les deux champs !"); return; }
+            fetch('/api/add_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: uid, nom: nom })
+            }).then(() => {
+                alert("Utilisateur ajouté !");
+                document.getElementById('new-uid').value = "";
+                document.getElementById('new-nom').value = "";
+            });
+        }
+
+        setInterval(updateDashboard, 1000);
+        updateDashboard();
+    </script>
+</body>
+</html>
