@@ -14,6 +14,8 @@ Le projet consiste en la conception et la réalisation d'une maquette fonctionne
 - Serveur embarqué sur Raspberry Pi 3 (Flask, InfluxDB, SQLite)
 - Interface Web de supervision accessible depuis le Raspberry Pi 4 commun
 
+![Maquette du simulateur de parking connecté](Images/final.png)
+
 ## Arborescence du dépôt
 ```
 ├── VIALON_Thomas_rapport_final.pdf   # Livrable 6 — Rapport final
@@ -34,7 +36,7 @@ Le projet consiste en la conception et la réalisation d'une maquette fonctionne
 ├── Fritzing/                         # Schémas électroniques (CAO)
 │   └── *.fzz                         # Circuits réalisés et envisagés pour le projet
 │
-└── images/                           # Photos et captures du projet
+└── Images/                           # Photos et captures du projet
 ```
 
 ## Technologies utilisées
